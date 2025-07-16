@@ -168,6 +168,12 @@ func (fs *FilesystemHandler) HandleSearchWithinFiles(
 		formattedResults.WriteString(fmt.Sprintf("File: %s (%s)\n", filePath, resourceURI))
 
 		for _, result := range fileResults {
+			// Check output size limit
+			if formattedResults.Len() > MAX_OUTPUT_SIZE {
+				formattedResults.WriteString("\n[Output truncated - too many results]\n")
+				break
+			}
+			
 			// Truncate line content if too long (keeping context around the match)
 			lineContent := result.LineContent
 			if len(lineContent) > 100 {
@@ -225,7 +231,7 @@ func searchWithinFiles(
 				return nil // Skip errors and continue
 			}
 
-			// Check if we've reached the maximum number of results
+			// Check if we've reached the maximum number of results (early termination)
 			if resultCount >= maxResults {
 				return filepath.SkipDir
 			}
@@ -287,6 +293,11 @@ func searchWithinFiles(
 
 				// Check if the line contains the substring
 				if strings.Contains(line, substring) {
+					// Check if we've reached the maximum results BEFORE adding
+					if resultCount >= maxResults {
+						return filepath.SkipDir
+					}
+					
 					// Add to results
 					results = append(results, SearchResult{
 						FilePath:    validPath,
@@ -295,11 +306,6 @@ func searchWithinFiles(
 						ResourceURI: pathToResourceURI(validPath),
 					})
 					resultCount++
-
-					// Check if we've reached the maximum results
-					if resultCount >= maxResults {
-						return filepath.SkipDir
-					}
 				}
 			}
 

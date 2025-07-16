@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -49,8 +50,23 @@ func (fs *FilesystemHandler) HandleReadFile(
 		}, nil
 	}
 
-	// Check if it's a directory
-	info, err := os.Stat(validPath)
+	// Open file and get info atomically to prevent TOCTOU
+	file, err := os.Open(validPath)
+	if err != nil {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.TextContent{
+					Type: "text",
+					Text: fmt.Sprintf("Error: %v", err),
+				},
+			},
+			IsError: true,
+		}, nil
+	}
+	defer file.Close()
+
+	// Get file info from opened file handle
+	info, err := file.Stat()
 	if err != nil {
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{
@@ -109,8 +125,8 @@ func (fs *FilesystemHandler) HandleReadFile(
 		}, nil
 	}
 
-	// Read file content
-	content, err := os.ReadFile(validPath)
+	// Read file content from opened handle
+	content, err := io.ReadAll(file)
 	if err != nil {
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{

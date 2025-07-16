@@ -11,6 +11,8 @@ const (
 	MAX_SEARCH_RESULTS = 1000
 	// Maximum file size in bytes to search within (10MB)
 	MAX_SEARCHABLE_SIZE = 10 * 1024 * 1024
+	// Maximum output size for formatted results (1MB)
+	MAX_OUTPUT_SIZE = 1024 * 1024
 )
 
 type FileInfo struct {

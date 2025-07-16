@@ -87,17 +87,18 @@ func (fs *FilesystemHandler) validatePath(requestedPath string) (string, error) 
 
 // detectMimeType tries to determine the MIME type of a file
 func detectMimeType(path string) string {
-	// Use mimetype library for more accurate detection
+	// Try extension-based detection first (faster)
+	ext := filepath.Ext(path)
+	if ext != "" {
+		mimeType := mime.TypeByExtension(ext)
+		if mimeType != "" {
+			return mimeType
+		}
+	}
+	
+	// Fallback to content-based detection
 	mtype, err := mimetype.DetectFile(path)
 	if err != nil {
-		// Fallback to extension-based detection if file can't be read
-		ext := filepath.Ext(path)
-		if ext != "" {
-			mimeType := mime.TypeByExtension(ext)
-			if mimeType != "" {
-				return mimeType
-			}
-		}
 		return "application/octet-stream" // Default
 	}
 
